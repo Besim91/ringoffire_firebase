@@ -1,22 +1,22 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Game } from './../../models/game';
 import { PlayerComponent } from './../player/player.component';
-import { MatDialogModule} from '@angular/material/dialog';
+import { MatDialogModule } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDialog, MAT_DIALOG_DATA } from '@angular/material/dialog';
-import { DialogAddPlayerComponent} from './../dialog-add-player/dialog-add-player.component';
-import { GameInfoComponent} from './../game-info/game-info.component';
-import { AngularFirestore } from '@angular/fire/compat/firestore';
-
+import { DialogAddPlayerComponent } from './../dialog-add-player/dialog-add-player.component';
+import { GameInfoComponent } from './../game-info/game-info.component';
+import { Firestore, onSnapshot, doc, updateDoc, collection } from '@angular/fire/firestore';
+import { ActivatedRoute } from '@angular/router';
+import { Game } from './../../models/game';
 
 @Component({
   selector: 'app-game',
   standalone: true,
   imports: [
     MatDialogModule,
-    CommonModule, 
+    CommonModule,
     PlayerComponent,
     MatButtonModule,
     GameInfoComponent,
@@ -26,57 +26,100 @@ import { AngularFirestore } from '@angular/fire/compat/firestore';
   styleUrls: ['./game.component.scss'],
   providers: [
     { provide: MAT_DIALOG_DATA, useValue: {} }
-  ]
+  ]  
 })
-export class GameComponent implements OnInit {
+export class GameComponent implements OnInit, OnDestroy {
   pickCardAnimation = false;
-  game!: Game;
-  currentCard: string = '';  
+  game: Game = new Game();
+  currentCard: string = '';
+  gameId!: any;
 
-  constructor(private firestore: AngularFirestore, public dialog: MatDialog) {}
+  firestore: Firestore = inject(Firestore);
+  unsubGameList: any;
 
+  constructor(private route: ActivatedRoute, public dialog: MatDialog) { }
+  
   ngOnInit(): void {
-    this.newGame();
-
-    this.firestore.
-    collection('games').
-    valueChanges().
-    subscribe((game)=>{
-      console.log(game);
+    this.route.paramMap.subscribe(params => {
+      this.gameId = params.get('gameId'); // Korrigiere dies, um 'gameId' zu verwenden
+      console.log('param ID:' + this.gameId); // Prüfe, ob die gameId korrekt ausgegeben wird
+      if (this.gameId) {
+        this.loadGame();
+      } else {
+        console.error('Game ID is null or undefined');
+      }
     });
-    
+  }
+  
+
+  
+  ngOnDestroy() {
+    if (this.unsubGameList) {
+      this.unsubGameList();
+    }
+  }
+
+  loadGame() {
+    const gameDocRef = doc(this.getColRef(), this.gameId);
+    this.unsubGameList = onSnapshot(gameDocRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const gameData = snapshot.data();
+        console.log('Dokument gefunden:', gameData);
+        this.game.currentPlayer = gameData['currentPlayer'];
+        this.game.playedCards = gameData['playedCards'];
+        this.game.player = gameData['player'];
+        this.game.stack = gameData['stack'];
+      } else {
+        console.log('Dokument nicht gefunden');
+      }
+    });
+  }
+
+  getColRef() {
+    return collection(this.firestore, 'games');
   }
 
   takeCard() {
-    if (!this.pickCardAnimation) {  
+    if (!this.pickCardAnimation) {
       let card = this.game.stack.pop();
-
-      if (card !== undefined) {  
+      if (card !== undefined) {
         this.currentCard = card;
       }
+      this.pickCardAnimation = true;
+      this.game.currentPlayer++;
+      this.game.currentPlayer = this.game.currentPlayer % this.game.player.length;
+
+      setTimeout(() => {
+        this.game.playedCards.push(this.currentCard);
+        this.pickCardAnimation = false;
+        // Das Spieldokument in Firestore aktualisieren
+        const gameDocRef = doc(this.getColRef(), this.gameId);
+        updateDoc(gameDocRef, {
+          playedCards: this.game.playedCards,
+          currentPlayer: this.game.currentPlayer,
+          stack: this.game.stack
+        }).then(() => {
+          console.log('Spielzustand aktualisiert');
+        }).catch((error) => {
+          console.error('Fehler beim Aktualisieren des Spielzustands:', error);
+        });
+      }, 1000);
     }
-    this.pickCardAnimation = true;
-
-
-    this.game.currentPlayer++;
-    this.game.currentPlayer = this.game.currentPlayer % this.game.player.length;
-
-    setTimeout(() => {
-      this.game.playedCards.push(this.currentCard);
-      this.pickCardAnimation = false;
-    }, 1000);
-  }
-
-  newGame() {
-    this.game = new Game();
   }
 
   openDialog(): void {
     const dialogRef = this.dialog.open(DialogAddPlayerComponent);
-
     dialogRef.afterClosed().subscribe((name: string) => {
       if (name && name.length > 0) {
         this.game.player.push(name);
+        const gameDocRef = doc(this.getColRef(), this.gameId);
+        updateDoc(gameDocRef, {
+          player: this.game.player
+        }).then(() => {
+          console.log('Neuer Spieler hinzugefügt:', name);
+        }).catch((error) => {
+          console.error('Fehler beim Aktualisieren der Spielerliste:', error);
+        });
       }
     });
   }
