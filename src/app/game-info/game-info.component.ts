@@ -1,6 +1,6 @@
 import { Component, Input, OnChanges, OnInit } from '@angular/core';
 import {MatCardModule} from '@angular/material/card';
-
+import { Game } from './../../models/game';
 
 @Component({
   selector: 'app-game-info',
@@ -10,6 +10,8 @@ import {MatCardModule} from '@angular/material/card';
   styleUrl: './game-info.component.scss'
 })
 export class GameInfoComponent implements OnInit, OnChanges {
+
+  game: Game = new Game();
 
   cardAction = [
     { title: 'Waterfall', description: 'Everyone has to start drinking at the same time. As soon as player 1 stops drinking, player 2 may stop drinking. Player 3 may stop as soon as player 2 stops drinking, and so on.' },
@@ -27,8 +29,7 @@ export class GameInfoComponent implements OnInit, OnChanges {
     { title: 'Rule', description: 'Make a rule. Everyone needs to drink when he breaks the rule.' },
   ];
 
-  title = '';
-  description = '';
+
   @Input() card!: string;
 
 
@@ -40,9 +41,10 @@ export class GameInfoComponent implements OnInit, OnChanges {
   ngOnChanges(): void {
     if (this.card) {
       let pickedCard = +this.card.split("_")[1];
-      console.log(pickedCard);
-      this.title = this.cardAction[pickedCard - 1].title;
-      this.description = this.cardAction[pickedCard - 1].description;
+      this.game.title = this.cardAction[pickedCard - 1].title;
+      console.log('Karte Titel:' + this.game.title);
+      this.game.description = this.cardAction[pickedCard - 1].description;
+      console.log('Karte Description:' + this.game.description);
     }
   }
 }

@@ -29,9 +29,7 @@ import { Game } from './../../models/game';
   ]  
 })
 export class GameComponent implements OnInit, OnDestroy {
-  pickCardAnimation = false;
   game: Game = new Game();
-  currentCard: string = '';
   gameId!: any;
 
   firestore: Firestore = inject(Firestore);
@@ -51,8 +49,6 @@ export class GameComponent implements OnInit, OnDestroy {
     });
   }
   
-
-  
   ngOnDestroy() {
     if (this.unsubGameList) {
       this.unsubGameList();
@@ -69,6 +65,10 @@ export class GameComponent implements OnInit, OnDestroy {
         this.game.playedCards = gameData['playedCards'];
         this.game.player = gameData['player'];
         this.game.stack = gameData['stack'];
+        this.game.pickCardAnimation = gameData['pickCardAnimation'];
+        this.game.currentCard = gameData['currentCard'];
+        this.game.description = gameData['description'];
+        this.game.title = gameData['title'];
       } else {
         console.log('Dokument nicht gefunden');
       }
@@ -80,24 +80,28 @@ export class GameComponent implements OnInit, OnDestroy {
   }
 
   takeCard() {
-    if (!this.pickCardAnimation) {
+    if (!this.game.pickCardAnimation) {
       let card = this.game.stack.pop();
       if (card !== undefined) {
-        this.currentCard = card;
+        this.game.currentCard = card;
       }
-      this.pickCardAnimation = true;
+      this.game.pickCardAnimation = true;
       this.game.currentPlayer++;
       this.game.currentPlayer = this.game.currentPlayer % this.game.player.length;
 
+      console.log('Wert für Datenbak:' + this.game.title);
+      console.log('Wert für Datenbak:' + this.game.description);
       setTimeout(() => {
-        this.game.playedCards.push(this.currentCard);
-        this.pickCardAnimation = false;
+        this.game.playedCards.push(this.game.currentCard);
+        this.game.pickCardAnimation = false;
         // Das Spieldokument in Firestore aktualisieren
         const gameDocRef = doc(this.getColRef(), this.gameId);
         updateDoc(gameDocRef, {
           playedCards: this.game.playedCards,
           currentPlayer: this.game.currentPlayer,
-          stack: this.game.stack
+          stack: this.game.stack,
+          title: this.game.title,
+          description: this.game.description
         }).then(() => {
           console.log('Spielzustand aktualisiert');
         }).catch((error) => {

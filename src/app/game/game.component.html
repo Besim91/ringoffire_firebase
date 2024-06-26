@@ -9,8 +9,8 @@
 
         <img *ngFor="let c of [0,1,2,3]; let i = index;" [ngStyle]="{'right.px': i * 5}" src="./../../assets/img/cards/card_cover.png">
         <img (click)="takeCard()" style="right: 50px; cursor: pointer;" src="./../../assets/img/cards/card_cover.png">
-        <img (click)="takeCard()" *ngIf="pickCardAnimation" class="pickCard pickCardAnimation" style="right: 50px"
-             src="./../../assets/img/cards/{{ currentCard }}.png">
+        <img (click)="takeCard()" *ngIf="game.pickCardAnimation" class="pickCard pickCardAnimation" style="right: 50px"
+             src="./../../assets/img/cards/{{ game.currentCard }}.png">
     </div>
 </div>
 
@@ -18,4 +18,4 @@
     <mat-icon>add</mat-icon>
 </button>
 
-<app-game-info [card]="currentCard" class="pinBottom"></app-game-info>
+<app-game-info [card]="game.currentCard" class="pinBottom"></app-game-info>
