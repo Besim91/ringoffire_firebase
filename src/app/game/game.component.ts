@@ -1,46 +1,33 @@
-import { Component, inject, OnInit, OnDestroy } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { PlayerComponent } from './../player/player.component';
-import { MatDialogModule } from '@angular/material/dialog';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
-import { MatDialog, MAT_DIALOG_DATA } from '@angular/material/dialog';
-import { DialogAddPlayerComponent } from './../dialog-add-player/dialog-add-player.component';
-import { GameInfoComponent } from './../game-info/game-info.component';
-import { Firestore, onSnapshot, doc, updateDoc, collection } from '@angular/fire/firestore';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
+import { MatDialog } from '@angular/material/dialog';
+import { GameService } from './../global-data.service';
+import { Firestore, onSnapshot, doc, updateDoc, collection } from '@angular/fire/firestore';
+import { DialogAddPlayerComponent } from './../dialog-add-player/dialog-add-player.component';
 import { Game } from './../../models/game';
+
+
 
 @Component({
   selector: 'app-game',
-  standalone: true,
-  imports: [
-    MatDialogModule,
-    CommonModule,
-    PlayerComponent,
-    MatButtonModule,
-    GameInfoComponent,
-    MatIconModule
-  ],
   templateUrl: './game.component.html',
-  styleUrls: ['./game.component.scss'],
-  providers: [
-    { provide: MAT_DIALOG_DATA, useValue: {} }
-  ]  
+  styleUrls: ['./game.component.scss']
 })
 export class GameComponent implements OnInit, OnDestroy {
-  game: Game = new Game();
   gameId!: any;
-
-  firestore: Firestore = inject(Firestore);
+  game: Game = new Game();
   unsubGameList: any;
 
-  constructor(private route: ActivatedRoute, public dialog: MatDialog) { }
-  
+  constructor(
+    private route: ActivatedRoute,
+    public dialog: MatDialog,
+    private gameService: GameService,
+    private firestore: Firestore
+  ) {}
+
   ngOnInit(): void {
     this.route.paramMap.subscribe(params => {
-      this.gameId = params.get('gameId'); // Korrigiere dies, um 'gameId' zu verwenden
-      console.log('param ID:' + this.gameId); // Prüfe, ob die gameId korrekt ausgegeben wird
+      this.gameId = params.get('gameId');
       if (this.gameId) {
         this.loadGame();
       } else {
@@ -48,53 +35,51 @@ export class GameComponent implements OnInit, OnDestroy {
       }
     });
   }
-  
-  ngOnDestroy() {
+
+  ngOnDestroy(): void {
     if (this.unsubGameList) {
-      this.unsubGameList();
+      this.unsubGameList.unsubscribe();
     }
   }
 
-  loadGame() {
+  loadGame(): void {
     const gameDocRef = doc(this.getColRef(), this.gameId);
     this.unsubGameList = onSnapshot(gameDocRef, (snapshot) => {
       if (snapshot.exists()) {
-        const gameData = snapshot.data();
-        console.log('Dokument gefunden:', gameData);
-        this.game.currentPlayer = gameData['currentPlayer'];
-        this.game.playedCards = gameData['playedCards'];
-        this.game.player = gameData['player'];
-        this.game.stack = gameData['stack'];
-        this.game.pickCardAnimation = gameData['pickCardAnimation'];
-        this.game.currentCard = gameData['currentCard'];
-        this.game.description = gameData['description'];
-        this.game.title = gameData['title'];
+        const gameData = snapshot.data() as Game; // Assuming Game is a valid type
+        this.game.currentPlayer = gameData.currentPlayer;
+        this.game.playedCards = gameData.playedCards;
+        this.game.player = gameData.player;
+        this.game.stack = gameData.stack;
+        this.game.pickCardAnimation = gameData.pickCardAnimation;
+        this.game.currentCard = gameData.currentCard;
+        this.game.description = gameData.description;
+        this.game.title = gameData.title;
+        this.gameService.setGame(this.game); // Update game service
       } else {
-        console.log('Dokument nicht gefunden');
+        console.log('Document not found');
       }
     });
   }
 
-  getColRef() {
+  getColRef(): any {
     return collection(this.firestore, 'games');
   }
 
-  takeCard() {
+  takeCard(): void {
     if (!this.game.pickCardAnimation) {
       let card = this.game.stack.pop();
       if (card !== undefined) {
         this.game.currentCard = card;
+        this.gameService.setGame(this.game); // Update game service
       }
       this.game.pickCardAnimation = true;
       this.game.currentPlayer++;
       this.game.currentPlayer = this.game.currentPlayer % this.game.player.length;
 
-      console.log('Wert für Datenbak:' + this.game.title);
-      console.log('Wert für Datenbak:' + this.game.description);
       setTimeout(() => {
         this.game.playedCards.push(this.game.currentCard);
         this.game.pickCardAnimation = false;
-        // Das Spieldokument in Firestore aktualisieren
         const gameDocRef = doc(this.getColRef(), this.gameId);
         updateDoc(gameDocRef, {
           playedCards: this.game.playedCards,
@@ -103,9 +88,9 @@ export class GameComponent implements OnInit, OnDestroy {
           title: this.game.title,
           description: this.game.description
         }).then(() => {
-          console.log('Spielzustand aktualisiert');
+          console.log('Game state updated');
         }).catch((error) => {
-          console.error('Fehler beim Aktualisieren des Spielzustands:', error);
+          console.error('Error updating game state:', error);
         });
       }, 1000);
     }
@@ -116,13 +101,14 @@ export class GameComponent implements OnInit, OnDestroy {
     dialogRef.afterClosed().subscribe((name: string) => {
       if (name && name.length > 0) {
         this.game.player.push(name);
+        this.gameService.setGame(this.game); // Update game service
         const gameDocRef = doc(this.getColRef(), this.gameId);
         updateDoc(gameDocRef, {
           player: this.game.player
         }).then(() => {
-          console.log('Neuer Spieler hinzugefügt:', name);
+          console.log('New player added:', name);
         }).catch((error) => {
-          console.error('Fehler beim Aktualisieren der Spielerliste:', error);
+          console.error('Error updating player list:', error);
         });
       }
     });

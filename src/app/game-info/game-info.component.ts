@@ -1,16 +1,14 @@
-import { Component, Input, OnChanges, OnInit } from '@angular/core';
-import {MatCardModule} from '@angular/material/card';
+import { Component, Input } from '@angular/core';
+import { GameService } from './../global-data.service';
 import { Game } from './../../models/game';
 
 @Component({
   selector: 'app-game-info',
-  standalone: true,
-  imports: [MatCardModule],
   templateUrl: './game-info.component.html',
-  styleUrl: './game-info.component.scss'
+  styleUrls: ['./game-info.component.scss']
 })
-export class GameInfoComponent implements OnInit, OnChanges {
-
+export class GameInfoComponent {
+  @Input() card!: string;
   game: Game = new Game();
 
   cardAction = [
@@ -30,21 +28,14 @@ export class GameInfoComponent implements OnInit, OnChanges {
   ];
 
 
-  @Input() card!: string;
-
-
-  constructor(){}
-
-  ngOnInit(): void {
-  }
+  constructor(private gameService: GameService) {}
 
   ngOnChanges(): void {
     if (this.card) {
       let pickedCard = +this.card.split("_")[1];
       this.game.title = this.cardAction[pickedCard - 1].title;
-      console.log('Karte Titel:' + this.game.title);
       this.game.description = this.cardAction[pickedCard - 1].description;
-      console.log('Karte Description:' + this.game.description);
+      this.gameService.setGame(this.game); 
     }
   }
 }
