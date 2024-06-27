@@ -54,3 +54,16 @@
     bottom: 48px;
     right: 16px;
 }
+
+.popup {
+    position: fixed;
+    top: 25%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.75);
+    color: white;
+    padding: 1rem 2rem;
+    border-radius: 10px;
+    z-index: 1000;
+    text-align: center;
+  }

@@ -20,7 +20,7 @@ export class GameInfoComponent {
       let pickedCard = +this.card.split("_")[1];
       this.gameservice.game.title = this.gameservice.cardAction[pickedCard - 1].title;
       this.gameservice.game.description = this.gameservice.cardAction[pickedCard - 1].description;
-      this.gameservice.setGame(this.gameservice.game); 
+      // this.gameservice.setGame(this.gameservice.game); 
     }
   }
 }
