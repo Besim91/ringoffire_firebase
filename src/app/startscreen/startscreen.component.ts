@@ -1,36 +1,32 @@
 import { Component, inject } from '@angular/core';
 import { Router } from '@angular/router'; 
-import { Firestore, collection, addDoc } from '@angular/fire/firestore';
 import { ActivatedRoute } from '@angular/router';
-import { GameComponent } from './../game/game.component';
-import { Game } from './../../models/game';
-
-
+import { GameService } from '../gameservice'
+import { Game } from './../../models/game'
+import { addDoc } from '@firebase/firestore';
 
 @Component({
   selector: 'app-startscreen',
   standalone: true,
-  imports: [GameComponent],
+  imports: [],
   templateUrl: './startscreen.component.html',
   styleUrl: './startscreen.component.scss'
 })
 
 export class StartscreenComponent {
-  firestore: Firestore = inject(Firestore);
+  route = inject(ActivatedRoute);
+  router = inject(Router);
+  gameservice = inject(GameService);
 
-  constructor(private route: ActivatedRoute, private router: Router){}
 
   newGame(){
-    let game = new Game();
-    addDoc(this.getColRef(), game.gameAsJson())
-      .then((docRef) => {
+    this.gameservice.game = new Game();
+    addDoc(this.gameservice.getColRef(), this.gameservice.game.gameAsJson())
+      .then((docRef: any) => {
         this.router.navigate(['/game', docRef.id]);
-        console.log(docRef.id)
       })
-
+      console.log('Beim starten initalisiert:' + this.gameservice.game.gameAsJson());
   }
 
-  getColRef(){
-    return collection(this.firestore, 'games');
-  }
+
 }

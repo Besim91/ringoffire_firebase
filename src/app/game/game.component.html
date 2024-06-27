@@ -1,16 +1,16 @@
-<app-player *ngFor="let player of game.player; let i = index" [ngStyle]="{'top.px': 100 + (i * 90)}" class="playerPosition" [name]="player"
-            [playerActive]="i == game.currentPlayer"></app-player>
+<app-player *ngFor="let player of gameservice.game.player; let i = index" [ngStyle]="{'top.px': 100 + (i * 90)}" class="playerPosition"
+            [name]="player" [playerActive]="i == gameservice.game.currentPlayer"></app-player>
 
 <div class="field">
 
     <div class="cardStack">
 
-        <img *ngFor="let cardOnField of game.playedCards" class="playedCard" src="./../../assets/img/cards/{{ cardOnField }}.png">
+        <img *ngFor="let cardOnField of gameservice.game.playedCards" class="playedCard" src="./../../assets/img/cards/{{ cardOnField }}.png">
 
         <img *ngFor="let c of [0,1,2,3]; let i = index;" [ngStyle]="{'right.px': i * 5}" src="./../../assets/img/cards/card_cover.png">
         <img (click)="takeCard()" style="right: 50px; cursor: pointer;" src="./../../assets/img/cards/card_cover.png">
-        <img (click)="takeCard()" *ngIf="game.pickCardAnimation" class="pickCard pickCardAnimation" style="right: 50px"
-             src="./../../assets/img/cards/{{ game.currentCard }}.png">
+        <img (click)="takeCard()" *ngIf="gameservice.game.pickCardAnimation" class="pickCard pickCardAnimation" style="right: 50px"
+             src="./../../assets/img/cards/{{ gameservice.game.currentCard }}.png">
     </div>
 </div>
 
@@ -18,4 +18,4 @@
     <mat-icon>add</mat-icon>
 </button>
 
-<app-game-info [card]="game.currentCard" class="pinBottom"></app-game-info>
+<app-game-info [card]="gameservice.game.currentCard" class="pinBottom"></app-game-info>
